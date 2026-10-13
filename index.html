@@ -53,8 +53,8 @@ input[type=text],select{font:inherit;padding:10px;border:2px solid var(--line);b
 .more{margin-top:8px}.more summary{cursor:pointer;color:var(--acc);font-weight:600;padding:8px 0}
 .progbox{margin:10px 0}.progbox .lbl{display:flex;justify-content:space-between;font-size:13px;color:var(--mut);margin-bottom:4px}
 </style></head><body>
-<div id="gate"><div class="box"><h2>🎧 商務英文練習</h2><p>iPhone 需先點一下才能播放聲音。<br>點下方按鈕開始，之後即可自動播放。</p><button class="btn pri" id="gateBtn">點一下開始聽</button></div></div>
-<header><div class="top"><h1>📘 商務英文每日練習</h1><button class="iconbtn" id="setBtn" type="button">⚙️ 設定</button></div></header>
+<div id="gate"><div class="box"><h2>🎧 商務英文練習</h2><p>iPhone 需先點一下才能播放聲音。<br>點下方按鈕開始，之後即可自動播放。</p><button class="btn pri" id="gateBtn" aria-label="點一下開始聽">點一下開始聽</button></div></div>
+<header><div class="top"><h1>📘 商務英文每日練習</h1><button class="iconbtn" id="setBtn" type="button" aria-label="開啟設定">⚙️ 設定</button></div></header>
 <nav id="nav"><button data-t="today">今日</button><button data-t="word">單詞</button><button data-t="scene">場景</button><button data-t="lib">詞庫</button><button data-t="stats">進度</button></nav>
 <div id="turn"></div>
 <main id="main"></main>
@@ -65,8 +65,11 @@ input[type=text],select{font:inherit;padding:10px;border:2px solid var(--line);b
 <label>每日題數</label><select id="daily"><option>10</option><option>20</option><option>30</option></select>
 <label>口音</label><select id="accent"><option value="en-US">美式</option><option value="en-GB">英式</option></select>
 <p class="hint">英式僅單字有獨立語音；例句與對話仍為美式。</p>
-<label>語速</label><select id="rate"><option value="0.7">0.7x（慢）</option><option value="1">1x</option></select>
+<label>語速</label><select id="rate"><option value="1">1x（預設）</option><option value="0.7">0.7x（慢）</option></select>
 <label>閃卡翻開前自動播音</label><select id="autoplay"><option value="0">關閉（建議）</option><option value="1">開啟</option></select>
+<label>練習範圍</label><select id="reviewOnly"><option value="0">全部單字</option><option value="1">只練待複習</option></select>
+<label>收藏篩選</label><select id="favOnly"><option value="0">不限</option><option value="1">只練收藏 ★</option></select>
+
 <hr style="border-color:var(--line);margin:16px 0">
 <button class="btn l" style="width:100%" id="dlAll">⬇ 下載全部語音（約 50MB）</button>
 <div class="progbox" id="dlProg" style="display:none"><div class="lbl"><span id="dlLbl">準備中…</span><span id="dlPct">0%</span></div><div class="pbar"><i id="dlBar"></i></div></div>
@@ -81,16 +84,59 @@ const AUD={"u":{"\"Best regards\" is a safe sign-off.":"audio/u5e448deb03.mp3","
 const W=DATA.words,SC=DATA.scenes,CATS=DATA.cats,DAY=864e5;
 const $=s=>document.querySelector(s),M=$('#main');
 const LS={get(k,d){try{return JSON.parse(localStorage.getItem('be_'+k))??d}catch(e){return d}},set(k,v){localStorage.setItem('be_'+k,JSON.stringify(v))}};
-let srs=LS.get('srs',{}),cfg=Object.assign({cat:'all',daily:10,accent:'en-US',rate:0.7,autoplay:0},LS.get('cfg',{})),log=LS.get('log',{}),set=LS.get('set',null);
+let srs=LS.get('srs',{}),cfg=Object.assign({cat:'all',daily:10,accent:'en-US',rate:1,autoplay:0,reviewOnly:0,favOnly:0,cfgv:3},LS.get('cfg',{}));if((cfg.cfgv||0)<3){cfg.rate=1;cfg.cfgv=3};let log=LS.get('log',{}),set=LS.get('set',null),favs=new Set(LS.get('favs',[]));
 const IV=[0,1,2,4,7,15,30,60];
 const today=()=>{const d=new Date();return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate()};
 const dayN=()=>Math.floor((Date.now()-new Date().getTimezoneOffset()*6e4)/DAY);
 const esc=s=>String(s).replace(/[&<>"']/g,c=>'&#'+c.charCodeAt(0)+';');
 const shuf=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.random()*(i+1)|0;[a[i],a[j]]=[a[j],a[i]]}return a};
-const pool=()=>W.filter(w=>cfg.cat==='all'||w.c===cfg.cat);
+const pool=()=>W.filter(w=>(cfg.cat==='all'||w.c===cfg.cat)&&(!+cfg.reviewOnly||(srs[w.id]&&srs[w.id].due<=dayN()))&&(!+cfg.favOnly||favs.has(w.id)));
 const learned=()=>W.filter(w=>srs[w.id]&&srs[w.id].box>=2);
-function save(){LS.set('srs',srs);LS.set('cfg',cfg);LS.set('log',log);LS.set('set',set)}
+function saveFavs(){LS.set('favs',[...favs])}
+function isFav(id){return favs.has(id)}
+function toggleFav(id){if(favs.has(id))favs.delete(id);else favs.add(id);saveFavs();toast(favs.has(id)?'已加入收藏 ★':'已取消收藏');return favs.has(id)}
+function save(){LS.set('srs',srs);LS.set('cfg',cfg);LS.set('log',log);LS.set('set',set);saveSession()}
+function saveSession(){LS.set('sess',{tab,wmode,qi,smode,sf,day:today()})}
+function resumeSession(){const sess=LS.get('sess',null);if(!sess||sess.day!==today())return false;tab=sess.tab||'today';wmode=sess.wmode||'card';qi=sess.qi||0;smode=sess.smode??null;sf=sess.sf||'all';return true}
+
 function wHead(w){return w.w.replace(/\s*\(.*?\)\s*/g,' ').trim()}
+
+const PRON_TIPS={
+'agenda':'重音在第二音節：a-GEN-da',
+'minutes':'會議記錄念 MIN-its，不是 my-newts',
+'quorum':'念 KWOR-um',
+'consensus':'con-SEN-sus，重音在 SEN',
+'reschedule':'re-SKED-jool（美）/ re-SHED-yool（英）',
+'inquiry':'美 in-KWIR-ee；英 IN-kwih-ree',
+'convenient':'con-VEEN-yunt',
+'compromise':'COM-pruh-mize',
+'leverage':'LEV-er-ij（美）',
+'deliverable':'de-LIV-er-uh-bul',
+'stakeholder':'STAYK-hol-der',
+'bottleneck':'BOT-l-nek',
+'revenue':'REV-uh-noo',
+'guidance':'GY-duns',
+'receipt':'ri-SEET（p 不發音）',
+'colleague':'KOL-eeg',
+'entrepreneur':'ahn-truh-pruh-NUR',
+'hierarchy':'HY-uh-rar-kee',
+'liaison':'lee-AY-zon',
+'epitome':'ih-PIT-uh-mee',
+'cache':'念 cash',
+'queue':'念 kyoo',
+'debt':'b 不發音：det',
+'mortgage':'MOR-gij（t 不發音）',
+'warranty':'WOR-un-tee',
+'clause':'念 klawz',
+'indemnify':'in-DEM-nuh-fy',
+'procure':'pro-KYOOR',
+'logistics':'luh-JIS-tiks',
+'volatile':'VOL-uh-tl',
+'diversify':'dy-VUR-suh-fy',
+'portfolio':'port-FOH-lee-oh'
+};
+function tipHTML(w){const t=PRON_TIPS[wHead(w).toLowerCase()]||PRON_TIPS[w.w.toLowerCase()];return t?`<p class="hint">🗣 發音：${esc(t)}</p>`:''}
+
 
 // ---- TTS / Audio ----
 const synth=window.speechSynthesis;let voices=[];
@@ -100,6 +146,7 @@ function pickV(){const L=cfg.accent,m=voices.filter(v=>v.lang.replace('_','-').t
  return m.find(v=>v.localService&&/enhanced|premium|natural|samantha|daniel|google/i.test(v.name))||m.find(v=>v.localService)||m[0]||null}
 let curA=null,playBtn=null;const AE=new Audio();AE.preload='auto';AE.setAttribute('playsinline','');AE.setAttribute('webkit-playsinline','');
 let unlocked=LS.get('unlocked',false);
+function toast(msg,ms){let t=$('#toast');if(!t){t=document.createElement('div');t.id='toast';t.style.cssText='position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:#1e3148;color:#fff;padding:10px 16px;border-radius:12px;z-index:30;font-size:14px;box-shadow:0 8px 24px #0008;max-width:90%;text-align:center;display:none';document.body.appendChild(t)}t.textContent=msg;t.style.display='block';clearTimeout(t._tm);t._tm=setTimeout(()=>t.style.display='none',ms||2200)}
 function setPlayingUI(on,label){
   document.querySelectorAll('.btn.playing').forEach(b=>{b.classList.remove('playing');if(b.dataset.olab){b.innerHTML=b.dataset.olab;delete b.dataset.olab}});
   if(on&&playBtn){playBtn.dataset.olab=playBtn.innerHTML;playBtn.classList.add('playing');playBtn.innerHTML=label||'🔊 播放中…'}}
@@ -113,7 +160,7 @@ function speak(t,rate,spk){if(!unlocked)return Promise.resolve();
  const src=clip(t,spk);rate=rate||+cfg.rate;if(pend){pend();pend=null}if(!src){setPlayingUI(1);return ttsSpeak(t,rate)}
  return new Promise(res=>{const my=++tok,a=AE;let done=false;
   const fin=()=>{if(!done){done=true;if(pend===fin)pend=null;setPlayingUI(0);res()}};pend=fin;
-  const fb=()=>{if(!done&&my===tok){done=true;pend=null;ttsSpeak(t,rate).then(res)}};
+  const fb=()=>{if(!done&&my===tok){done=true;pend=null;setPlayingUI(0);toast('語音播放失敗，改用手機語音');ttsSpeak(t,rate).then(res)}};
   a.onended=()=>{if(my===tok)fin()};a.onerror=fb;
   a.onloadedmetadata=()=>{a.playbackRate=rate};
   a.pause();const abs=new URL(src,location.href).href;if(a.src!==abs)a.src=src;try{a.currentTime=0}catch(e){}
@@ -143,7 +190,7 @@ function grade(id,ok){const s=srs[id]||{box:0,due:0,r:0,x:0};if(ok){s.box=Math.m
  s.due=dayN()+(ok?IV[s.box]:0);srs[id]=s;const t=today();if(!log[t])log[t]={ops:0,words:[]};log[t].ops=(log[t].ops||0)+1;
  if(ok&&!log[t].words.includes(id))log[t].words.push(id);save()}
 function addReview(id){if(!srs[id])srs[id]={box:1,due:dayN(),r:0,x:0};else srs[id].due=dayN();save()}
-function buildSet(rand){const p=pool(),n=+cfg.daily,d=dayN();let due=shuf(p.filter(w=>srs[w.id]&&srs[w.id].due<=d)),nw=p.filter(w=>!srs[w.id]);
+function buildSet(rand){const p=pool(),n=+cfg.daily,d=dayN();if(!p.length){set={day:today(),cat:cfg.cat,ids:[],done:[]};save();return}let due=shuf(p.filter(w=>srs[w.id]&&srs[w.id].due<=d)),nw=p.filter(w=>!srs[w.id]);
  if(rand)nw=shuf(nw);let ids=due.slice(0,Math.ceil(n/2)).concat(nw).slice(0,n);if(ids.length<n)ids=ids.concat(shuf(p.filter(w=>!ids.includes(w))).slice(0,n-ids.length));
  set={day:today(),cat:cfg.cat,ids:shuf(ids).map(w=>w.id),done:[]};save()}
 function ensureSet(){if(!set||set.day!==today()||set.cat!==cfg.cat||set.ids.length!==+cfg.daily)buildSet(false)}
@@ -170,8 +217,9 @@ const CYCLE=['card','listen','m2w','fill','ctx'];
 function go(t){stopAll();tab=t;document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('on',b.dataset.t===t));render();scrollTo(0,0)}
 function render(){({today:rToday,word:rWord,scene:rScene,lib:rLib,stats:rStats})[tab]()}
 
-function cardHTML(w,showAll=true){const sc=scenesFor(w.id);return `<div class="card" id="fcard"><span class="tag">${w.c}</span>${srs[w.id]?`<span class="tag">複習等級 ${srs[w.id].box}</span>`:'<span class="tag">新詞</span>'}
- <div class="big">${esc(w.w)}</div><div class="row">
+function cardHTML(w,showAll=true){const sc=scenesFor(w.id);return `<div class="card" id="fcard"><span class="tag">${w.c}</span>${srs[w.id]?`<span class="tag">複習等級 ${srs[w.id].box}</span>`:'<span class="tag">新詞</span>'}${isFav(w.id)?'<span class="tag">★ 收藏</span>':''}
+ <div class="big">${esc(w.w)} <button type="button" class="btn s l" aria-label="收藏單字" onclick="event.stopPropagation();this.textContent=toggleFav(${w.id})?'★':'☆'">${isFav(w.id)?'★':'☆'}</button></div>
+ ${tipHTML(w)}<div class="row">
  <button class="btn s" onclick="sayBtn(this,wHead(W[${w.id}]))">🔊 單字</button>
  <button class="btn s l" onclick="markPlayBtn(this);stopAll();speak(wHead(W[${w.id}]),0.5)">🐢 慢速</button>
  <button class="btn s l" onclick="sayBtn(this,W[${w.id}].e)">🔊 例句</button>
@@ -182,22 +230,31 @@ function cardHTML(w,showAll=true){const sc=scenesFor(w.id);return `<div class="c
  ${sc.length?`<div class="mut" style="margin-top:8px">出現在場景：${sc.map(([s,i])=>`<a href="#" style="color:var(--acc)" onclick="openScene(${i});return false">${esc(s.t)}</a>`).join('、')}</div>`:''}`:''}</div>`}
 async function playDlg(id){stopAll();const r=runId;for(let i=0;i<2;i++){if(r!==runId)return;await speak(W[id].d[i],0,i?'B':'A');await wait(400)}}
 
-function rToday(){ensureSet();const done=set.done.length,n=set.ids.length,d=dayN(),due=pool().filter(w=>srs[w.id]&&srs[w.id].due<=d).length;
- const next=CYCLE.includes(wmode)?wmode:'card';
- M.innerHTML=`<div class="card"><div class="stat"><div><b>${streak()}🔥</b>連續天數</div><div><b>${todayWords()}</b>今日學會</div><div><b>${due}</b>待複習</div></div>
+function rToday(){ensureSet();const p=pool();
+ if(!p.length){M.innerHTML=`<div class="card"><h3>目前沒有可練習的單字</h3><p class="mut">可能是「只練待複習／只練收藏」太嚴，或此分類為空。請到 ⚙️ 設定調整。</p><button type="button" class="btn" onclick="$('#setBtn').click()">開啟設定</button></div>`;return}
+ const done=set.done.length,n=set.ids.length,d=dayN(),due=p.filter(w=>srs[w.id]&&srs[w.id].due<=d).length;
+ const next=CYCLE.includes(wmode)?wmode:'card';const st=streak();
+ const cele=st>0&&st%7===0?`<div class="scn">🎉 太強了！連續練習 ${st} 天，繼續保持！</div>`:(st>=3?`<div class="hint">🔥 連續 ${st} 天 — 離下一週里程碑還有 ${7-(st%7||7)} 天</div>`:'');
+ if(n&&done>=n){M.innerHTML=`<div class="card" style="text-align:center;padding:28px 16px"><div style="font-size:48px">🏅</div><h2 style="margin:8px 0">今日目標完成！</h2><p>已掌握今日 ${done}/${n} 個單詞</p><p class="mut">連續 ${st} 天　今日學會 ${todayWords()} 詞</p>${cele}
+ <button type="button" class="btn pri" onclick="go('scene')">去場景跟讀鞏固</button>
+ <div class="row"><button type="button" class="btn l" onclick="qi=0;wmode='card';go('word')">再練一輪</button><button type="button" class="btn l" onclick="confirmShuffle(()=>render())">重抽新一組</button></div>
+ <button type="button" class="btn l" style="width:100%" onclick="wmode='ctx';go('word')">挑戰情境選詞</button></div>
+ <div class="card"><b>今日單詞</b><div class="list">${set.ids.map(id=>`<div class="it" onclick="jumpWord(${id})">✅ <b>${esc(W[id].w)}</b> <span class="mut">${esc(W[id].m)}</span></div>`).join('')}</div></div>`;return}
+ M.innerHTML=`<div class="card"><div class="stat"><div><b>${st}🔥</b>連續天數</div><div><b>${todayWords()}</b>今日學會</div><div><b>${due}</b>待複習</div></div>
+ ${cele}
  <p style="margin:12px 0 4px">今日單詞 ${done}/${n}　<span class="mut">操作 ${todayOps()} 次</span></p><div class="pbar"><i style="width:${n?done/n*100:0}%"></i></div>
- <button class="btn pri" onclick="wmode='${next}';go('word')">▶ 開始今日練習</button>
- <p class="hint">依序練習：閃卡 → 聽音選義 → 看義選詞 → 填空 → 情境選詞。也可從下方選單一模式。</p>
+ <button type="button" class="btn pri" onclick="wmode='${next}';go('word')">▶ 開始今日練習</button>
+ <p class="hint">建議流程：閃卡 → 聽音選義 → 看義選詞 → 填空 → 情境選詞。也可從下方選單一模式。</p>
  <details class="more"><summary>更多練習</summary>
- <div class="row" style="margin-top:8px"><button class="btn l" onclick="wmode='card';go('word')">閃卡</button><button class="btn l" onclick="wmode='listen';go('word')">聽音選義</button></div>
- <div class="row"><button class="btn l" onclick="wmode='m2w';go('word')">看義選詞</button><button class="btn l" onclick="wmode='fill';go('word')">例句填空</button></div>
- <div class="row"><button class="btn l" onclick="wmode='ctx';go('word')">情境選詞</button><button class="btn l" onclick="go('scene')">場景跟讀</button></div>
- <button class="btn l" style="width:100%" onclick="confirmShuffle(()=>render())">🔀 重抽今日單詞</button>
+ <div class="row" style="margin-top:8px"><button type="button" class="btn l" onclick="wmode='card';go('word')">閃卡</button><button type="button" class="btn l" onclick="wmode='listen';go('word')">聽音選義</button></div>
+ <div class="row"><button type="button" class="btn l" onclick="wmode='m2w';go('word')">看義選詞</button><button type="button" class="btn l" onclick="wmode='fill';go('word')">例句填空</button></div>
+ <div class="row"><button type="button" class="btn l" onclick="wmode='ctx';go('word')">情境選詞</button><button type="button" class="btn l" onclick="go('scene')">場景跟讀</button></div>
+ <button type="button" class="btn l" style="width:100%" onclick="confirmShuffle(()=>render())">🔀 重抽今日單詞</button>
  </details></div>
- <div class="card"><b>今日單詞</b><div class="list">${set.ids.map(id=>`<div class="it" onclick="jumpWord(${id})">${set.done.includes(id)?'✅':'⬜'} <b>${esc(W[id].w)}</b> <span class="mut">${esc(W[id].m)}</span></div>`).join('')}</div></div>`}
+ <div class="card"><b>今日單詞</b><div class="list">${set.ids.map(id=>`<div class="it" onclick="jumpWord(${id})">${set.done.includes(id)?'✅':'⬜'} <b>${esc(W[id].w)}</b> <span class="mut">${esc(W[id].m)}</span> ${isFav(id)?'★':''}</div>`).join('')}</div></div>`}
 function jumpWord(id){ensureSet();const i=set.ids.indexOf(id);qi=i>=0?i:0;wmode='card';go('word')}
 
-function rWord(){ensureSet();const subs=[['card','閃卡'],['listen','聽音選義'],['m2w','看義選詞'],['fill','例句填空'],['ctx','情境選詞']];
+function rWord(){ensureSet();if(!set.ids.length){M.innerHTML=`<div class="card"><h3>沒有可練習的單字</h3><p class="mut">請在 ⚙️ 關閉「只練待複習／只練收藏」，或換分類。</p><button type="button" class="btn" onclick="$('#setBtn').click()">開啟設定</button></div>`;return}const subs=[['card','閃卡'],['listen','聽音選義'],['m2w','看義選詞'],['fill','例句填空'],['ctx','情境選詞']];
  M.innerHTML=`<div class="sub">${subs.map(([k,t])=>`<button class="${wmode===k?'on':''}" onclick="wmode='${k}';qi=0;rWord()">${t}</button>`).join('')}
  <button onclick="confirmShuffle(()=>{qi=0;rWord()})">🔀 重抽單詞</button></div>
  <p class="hint">${MODE_HINT[wmode]||''}</p><div id="wa"></div>`;
@@ -241,11 +298,15 @@ function bindSwipe(){const el=$('#fcard')||WA();if(!el||el._sw)return;el._sw=1;l
 let sf='all';
 function hideTurn(){const t=$('#turn');if(t){t.style.display='none';t.innerHTML=''}}
 function showTurn(msg,n){const t=$('#turn');t.style.display='block';t.innerHTML=msg+(n!=null?`<span class="cd">${n}</span>`:'')}
+let sq='';
 function rScene(){if(smode!==null)return showScene();const L=learned();
  const cs=['all',...new Set(SC.map(s=>s.c))];
- M.innerHTML=`<div class="sub">${cs.map(c=>`<button class="${sf===c?'on':''}" onclick="sf='${c}';rScene()">${c==='all'?'全部':c}</button>`).join('')}</div>
- <div class="card" onclick="openScene('mine')" style="cursor:pointer"><b>⭐ 我的單詞情境</b><p class="mut">用你在單詞模式記住的 ${L.length} 個詞，組成情境對話來跟讀${L.length?'':'（先去單詞模式練習幾個吧）'}</p></div>
- ${SC.map((s,i)=>[s,i]).filter(([s])=>sf==='all'||s.c===sf).map(([s,i])=>{const k=s.ws.filter(id=>srs[id]&&srs[id].box>=2).length;return`<div class="card" onclick="openScene(${i})" style="cursor:pointer"><span class="tag">${s.c}</span><b>${esc(s.t)}</b><p class="mut">${s.l.length} 句・含 ${s.ws.length} 個詞庫單詞（已學 ${k}）</p></div>`}).join('')}`}
+ const list=SC.map((s,i)=>[s,i]).filter(([s])=>(sf==='all'||s.c===sf)&&(!sq||(s.t+s.c+s.l.map(l=>l[1]).join(' ')).toLowerCase().includes(sq.toLowerCase())));
+ M.innerHTML=`<input type="text" id="sq" placeholder="搜尋場景（標題或句子）" value="${esc(sq)}" aria-label="搜尋場景">
+ <div class="sub" style="margin-top:8px">${cs.map(c=>`<button type="button" class="${sf===c?'on':''}" onclick="sf='${c}';rScene()">${c==='all'?'全部':c}</button>`).join('')}</div>
+ <div class="card" onclick="openScene('mine')" style="cursor:pointer"><b>⭐ 我的單詞情境</b><p class="mut">用已記住的 ${L.length} 個詞組成對話${L.length?'':'（先去單詞模式按「記住了」）'}</p></div>
+ ${list.length?list.map(([s,i])=>{const k=s.ws.filter(id=>srs[id]&&srs[id].box>=2).length;return`<div class="card" onclick="openScene(${i})" style="cursor:pointer"><span class="tag">${s.c}</span><b>${esc(s.t)}</b><p class="mut">${s.l.length} 句・詞庫 ${s.ws.length}（已學 ${k}）</p></div>`}).join(''):`<div class="card"><p class="mut">找不到符合「${esc(sq)}」的場景，試試別的關鍵字。</p></div>`}`;
+ const inp=$('#sq');if(inp){inp.oninput=()=>{sq=inp.value;rScene();const n=$('#sq');if(n){n.focus();n.setSelectionRange(sq.length,sq.length)}}}}
 function openScene(i){stopAll();smode=i;tab='scene';document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('on',b.dataset.t==='scene'));showScene();scrollTo(0,0)}
 let myLines=null;
 function curScene(){if(smode!=='mine')return SC[smode];if(!myLines){const L=shuf(learned().filter(w=>cfg.cat==='all'||w.c===cfg.cat)).slice(0,6);myLines={t:'我的單詞情境',c:'自選',r:['A','B'],l:L.flatMap(w=>[['A',w.d[0]],['B',w.d[1]]]),src:L}}return myLines}
@@ -268,14 +329,15 @@ async function playAll(m){stopAll();const r=runId,s=curScene();for(let i=0;i<s.l
  if(m===w){await countdown();if(r!==runId)return;await wait(gap+500);hideTurn()}
  else{hideTurn();await speak(t,0,w);if(r!==runId)return;await wait(m==='shadow'?gap:500)}}mark2(-1);hideTurn();const t=today();if(!log[t])log[t]={ops:0,words:[]};log[t].ops=(log[t].ops||0)+1;save()}
 function pop(id){const w=W[id],P=$('#pop');P.style.display='block';say(wHead(w));
- P.innerHTML=`<div class="big" style="font-size:22px">${esc(w.w)}</div><div class="mean">${esc(w.m)}</div><div class="ex">${esc(w.e)}</div><div class="scn">📍 ${esc(w.s)}</div>
- <div class="row"><button class="btn s" onclick="sayBtn(this,wHead(W[${id}]))">🔊 單字</button><button class="btn s l" onclick="sayBtn(this,W[${id}].e)">🔊 例句</button>
- <button class="btn s g" onclick="addReview(${id});this.textContent='已加入今日複習 ✓'">＋ 加入複習</button><button class="btn s l" onclick="$('#pop').style.display='none'">關閉</button></div>`}
+ P.innerHTML=`<div class="big" style="font-size:22px">${esc(w.w)}</div>${tipHTML(w)}<div class="mean">${esc(w.m)}</div><div class="ex">${esc(w.e)}</div><div class="scn">📍 ${esc(w.s)}</div>
+ <div class="row"><button type="button" class="btn s" onclick="sayBtn(this,wHead(W[${id}]))">🔊 單字</button><button type="button" class="btn s l" onclick="sayBtn(this,W[${id}].e)">🔊 例句</button>
+ <button type="button" class="btn s l" onclick="this.textContent=toggleFav(${id})?'★ 已收藏':'☆ 收藏'">${isFav(id)?'★ 已收藏':'☆ 收藏'}</button>
+ <button type="button" class="btn s g" onclick="addReview(${id});this.textContent='已加入今日複習 ✓'">＋ 加入複習</button><button type="button" class="btn s l" onclick="$('#pop').style.display='none'">關閉</button></div>`}
 
 // ---- library & stats ----
 let q='';
 function rLib(){const p=pool().filter(w=>!q||(w.w+w.m+w.e).toLowerCase().includes(q.toLowerCase()));
- M.innerHTML=`<input type="text" id="q" placeholder="搜尋英文或中文" value="${esc(q)}"><p class="mut">共 ${p.length} 筆（點擊展開）</p><div class="card list">${p.slice(0,300).map(w=>`<div class="it" onclick="libOpen(${w.id},this)"><b>${esc(w.w)}</b> <span class="mut">${esc(w.m)}</span> ${srs[w.id]?'<span class="tag">Lv'+srs[w.id].box+'</span>':''}</div>`).join('')}${p.length>300?'<p class="mut">結果太多，請用搜尋或分類篩選</p>':''}</div>`;
+ M.innerHTML=`<input type="text" id="q" placeholder="搜尋英文或中文" value="${esc(q)}" aria-label="搜尋詞庫"><p class="mut">共 ${p.length} 筆（點擊展開）${+cfg.favOnly?'・僅收藏':''}${+cfg.reviewOnly?'・僅待複習':''}</p><div class="card list">${p.length?p.slice(0,300).map(w=>`<div class="it" onclick="libOpen(${w.id},this)"><b>${esc(w.w)}</b> ${isFav(w.id)?'★ ':''}<span class="mut">${esc(w.m)}</span> ${srs[w.id]?'<span class="tag">Lv'+srs[w.id].box+'</span>':''}</div>`).join('')+'':`<p class="mut">沒有符合的單字。試試清除搜尋或調整 ⚙️ 篩選。</p>`}${p.length>300?'<p class="mut">結果太多，請用搜尋或分類篩選</p>':''}</div>`;
  const i=$('#q');i.oninput=()=>{q=i.value;rLib();const n=$('#q');n.focus();n.setSelectionRange(q.length,q.length)}}
 function libOpen(id,el){const d=document.createElement('div');d.innerHTML=cardHTML(W[id])+`<button class="btn s g" onclick="addReview(${id});this.textContent='已加入 ✓'">＋ 加入今日複習</button>`;el.replaceWith(d);d.querySelectorAll('.hl').forEach(e=>e.onclick=()=>pop(+e.dataset.w))}
 function rStats(){const tot=W.length,seen=Object.keys(srs).length,mast=Object.values(srs).filter(s=>s.box>=4).length;
@@ -319,7 +381,7 @@ async function downloadAll(){if(typeof AUD==='undefined'){alert('此版本沒有
  const urls=new Set();['u','b','g'].forEach(k=>Object.values(AUD[k]||{}).forEach(u=>urls.add(u)));
  const list=[...urls],box=$('#dlProg'),lbl=$('#dlLbl'),pct=$('#dlPct'),bar=$('#dlBar');
  box.style.display='block';let ok=0,fail=0;
- const cache=await caches.open('be-v3');
+ const cache=await caches.open('be-v4');
  for(let i=0;i<list.length;i++){const u=list[i];lbl.textContent=`下載語音 ${i+1}/${list.length}`;pct.textContent=Math.round(i/list.length*100)+'%';bar.style.width=(i/list.length*100)+'%';
   try{const abs=new URL(u,location.href).href;const hit=await cache.match(abs);if(!hit){const res=await fetch(abs);if(res.ok)await cache.put(abs,res.clone());else fail++}ok++}catch(e){fail++}
   if(i%20===0)await wait(0)}
@@ -340,9 +402,11 @@ document.addEventListener('keydown',e=>{
 
 // ---- init ----
 $('#cat').innerHTML='<option value="all">全部</option>'+CATS.map(c=>`<option>${c}</option>`).join('');
-['cat','daily','accent','rate','autoplay'].forEach(k=>{const e=$('#'+k);if(!e)return;e.value=String(cfg[k]??(k==='autoplay'?0:''));
- e.onchange=()=>{cfg[k]=e.value;save();if(k==='cat'||k==='daily'){qi=0;myLines=null;buildSet(false)}render()}});
+['cat','daily','accent','rate','autoplay','reviewOnly','favOnly'].forEach(k=>{const e=$('#'+k);if(!e)return;e.value=String(cfg[k]??0);
+ e.onchange=()=>{cfg[k]=e.value;save();if(k==='cat'||k==='daily'||k==='reviewOnly'||k==='favOnly'){qi=0;myLines=null;buildSet(false)}render()}});
+$('#nav').querySelectorAll('button').forEach(b=>{b.type='button';b.setAttribute('aria-label',b.textContent.trim())});
 $('#nav').onclick=e=>{if(e.target.dataset.t){smode=null;go(e.target.dataset.t)}};
 document.addEventListener('click',e=>{const P=$('#pop');if(P.style.display==='block'&&!P.contains(e.target)&&!e.target.classList.contains('hl'))P.style.display='none'});
-setupGate();go('today');
+setupGate();
+if(resumeSession()){document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('on',b.dataset.t===tab));render()}else go('today');
 </script><script>if("serviceWorker" in navigator&&location.protocol==="https:")navigator.serviceWorker.register("./sw.js");</script></body></html>
