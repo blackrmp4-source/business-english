@@ -74,12 +74,12 @@ function speak(t,rate,spk){const src=clip(t,spk);rate=rate||+cfg.rate;if(pend){p
   const fb=()=>{if(!done&&my===tok){done=true;pend=null;ttsSpeak(t,rate).then(res)}};
   a.onended=()=>{if(my===tok)fin()};a.onerror=fb;
   a.onloadedmetadata=()=>{a.playbackRate=rate};
-  a.pause();a.src=src;curA=a;a.defaultPlaybackRate=rate;a.playbackRate=rate;a.preservesPitch=true;a.webkitPreservesPitch=true;
+  a.pause();const abs=new URL(src,location.href).href;if(a.src!==abs)a.src=src;try{a.currentTime=0}catch(e){}curA=a;a.defaultPlaybackRate=rate;a.playbackRate=rate;a.preservesPitch=true;a.webkitPreservesPitch=true;
   const p=a.play();if(p&&p.catch)p.catch(e=>{if(e&&e.name==='AbortError')return;fb()})})}
-let lastSaid='',lastSpk;function say(t,spk){synth&&synth.cancel();tok++;AE.pause();lastSaid=t;lastSpk=spk;return speak(t,0,spk)}
+let lastSaid='',lastSpk;function say(t,spk){synth&&synth.cancel();lastSaid=t;lastSpk=spk;return speak(t,0,spk)}
 function stopAll(){runId++;synth&&synth.cancel();tok++;AE.pause();if(pend){pend();pend=null}}
 let runId=0;const wait=ms=>new Promise(r=>setTimeout(r,ms));
-const head=w=>w.w.replace(/\s*\(.*?\)\s*/g,' ').trim();
+function wHead(w){return w.w.replace(/\s*\(.*?\)\s*/g,' ').trim()}
 // ---- SRS ----
 function grade(id,ok){const s=srs[id]||{box:0,due:0,r:0,x:0};if(ok){s.box=Math.min(s.box+1,IV.length-1);s.r++}else{s.box=1;s.x++}
  s.due=dayN()+(ok?IV[s.box]:0);srs[id]=s;const t=today();log[t]=(log[t]||0)+1;save()}
@@ -102,7 +102,7 @@ let tab='today',wmode='card',smode=null,qi=0,qset=[];
 function go(t){stopAll();tab=t;document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('on',b.dataset.t===t));render();scrollTo(0,0)}
 function render(){({today:rToday,word:rWord,scene:rScene,lib:rLib,stats:rStats})[tab]()}
 function cardHTML(w,showAll=true){const sc=scenesFor(w.id);return `<div class="card"><span class="tag">${w.c}</span>${srs[w.id]?`<span class="tag">複習等級 ${srs[w.id].box}</span>`:'<span class="tag">新詞</span>'}
- <div class="big">${esc(w.w)}</div><div class="row"><button class="btn s" onclick="say(head(W[${w.id}]))">🔊 單字</button><button class="btn s l" onclick="stopAll();speak(head(W[${w.id}]),0.5)">🐢 慢速</button><button class="btn s l" onclick="say(W[${w.id}].e)">🔊 例句</button><button class="btn s l" onclick="lastSaid&&say(lastSaid,lastSpk)">🔁 重播</button></div>
+ <div class="big">${esc(w.w)}</div><div class="row"><button class="btn s" onclick="say(wHead(W[${w.id}]))">🔊 單字</button><button class="btn s l" onclick="stopAll();speak(wHead(W[${w.id}]),0.5)">🐢 慢速</button><button class="btn s l" onclick="say(W[${w.id}].e)">🔊 例句</button><button class="btn s l" onclick="lastSaid&&say(lastSaid,lastSpk)">🔁 重播</button></div>
  ${showAll?`<div class="mean">${esc(w.m)}</div><div class="ex">${hl(w.e)}</div>
  <div class="scn">📍 情境：${esc(w.s)}</div>${w.d.map((l,i)=>`<div class="line ${i?'B':''}"><span class="who">${i?'B':'A'}</span><span class="tx">${hl(l)}</span><button class="btn s l" onclick="say(W[${w.id}].d[${i}],'${i?'B':'A'}')">🔊</button></div>`).join('')}
  <button class="btn s l" onclick="playDlg(${w.id})">▶ 播放對話</button>
@@ -123,13 +123,13 @@ function mark(id,ok){grade(id,ok);if(ok){if(!set.done.includes(id))set.done.push
 function nextQ(){qi++;if(qi>=set.ids.length){WA().innerHTML=`<div class="card"><h3>🎉 這一輪完成！</h3><p>今日已掌握 ${set.done.length}/${set.ids.length}</p><div class="row"><button class="btn" onclick="qi=0;rWord()">再練一輪</button><button class="btn l" onclick="buildSet(true);qi=0;rWord()">換新的一組</button><button class="btn l" onclick="go('scene')">去場景應用</button></div></div>`;return}
  ({card:wCard,listen:wListen,m2w:wM2W,fill:wFill})[wmode]()}
 const prog=()=>`<p class="mut">第 ${qi+1}/${set.ids.length} 題</p>`;
-function wCard(){const w=W[set.ids[qi]];WA().innerHTML=prog()+cardHTML(w,false)+`<div id="rv"><button class="btn" style="width:100%" onclick="rev()">翻開看意思</button></div>`;setTimeout(()=>say(head(w)),200)}
+function wCard(){const w=W[set.ids[qi]];WA().innerHTML=prog()+cardHTML(w,false)+`<div id="rv"><button class="btn" style="width:100%" onclick="rev()">翻開看意思</button></div>`;setTimeout(()=>say(wHead(w)),200)}
 function rev(){const w=W[set.ids[qi]];WA().innerHTML=prog()+cardHTML(w,true)+`<div class="row"><button class="btn g" onclick="mark(${w.id},true);nextQ()">記住了 ✓</button><button class="btn r" onclick="mark(${w.id},false);nextQ()">還不熟 ✗</button></div>`}
 function opts(w,f){const same=shuf(W.filter(x=>x.id!==w.id&&x.c===w.c)).slice(0,3);while(same.length<3)same.push(shuf(W.filter(x=>x.id!==w.id&&!same.includes(x)))[0]);return shuf([w,...same])}
 function quiz(w,q,os,lab){WA().innerHTML=prog()+`<div class="card">${q}${os.map(o=>`<button class="opt" data-id="${o.id}">${esc(lab(o))}</button>`).join('')}<div id="fb"></div></div>`;
  WA().querySelectorAll('.opt').forEach(b=>b.onclick=()=>{const ok=+b.dataset.id===w.id;WA().querySelectorAll('.opt').forEach(x=>{x.disabled=true;if(+x.dataset.id===w.id)x.classList.add('ok')});if(!ok)b.classList.add('no');
-  mark(w.id,ok);say(head(w));$('#fb').innerHTML=`<p>${ok?'✅ 答對了':'❌ 正確答案：'+esc(w.w)+'（'+esc(w.m)+'）'}</p><div class="ex">${hl(w.e)}</div><button class="btn" style="width:100%" onclick="nextQ()">下一題</button>`})}
-function wListen(){const w=W[set.ids[qi]];quiz(w,`<p>聽發音，選出正確意思</p><div class="row"><button class="btn" onclick="say(head(W[${w.id}]))">🔊 再聽一次</button><button class="btn l" onclick="stopAll();speak(head(W[${w.id}]),0.5)">🐢 慢速</button></div>`,opts(w),o=>o.m);setTimeout(()=>say(head(w)),200)}
+  mark(w.id,ok);say(wHead(w));$('#fb').innerHTML=`<p>${ok?'✅ 答對了':'❌ 正確答案：'+esc(w.w)+'（'+esc(w.m)+'）'}</p><div class="ex">${hl(w.e)}</div><button class="btn" style="width:100%" onclick="nextQ()">下一題</button>`})}
+function wListen(){const w=W[set.ids[qi]];quiz(w,`<p>聽發音，選出正確意思</p><div class="row"><button class="btn" onclick="say(wHead(W[${w.id}]))">🔊 再聽一次</button><button class="btn l" onclick="stopAll();speak(wHead(W[${w.id}]),0.5)">🐢 慢速</button></div>`,opts(w),o=>o.m);setTimeout(()=>say(wHead(w)),200)}
 function wM2W(){const w=W[set.ids[qi]];quiz(w,`<p>選出符合意思的英文</p><div class="big" style="font-size:22px">${esc(w.m)}</div><div class="scn">📍 ${esc(w.s)}</div>`,opts(w),o=>o.w)}
 function blank(w){for(const k of w.k){const r=new RegExp('\\b'+k.replace(/[.*+?^${}()|[\]\\]/g,'\\$&').split(' ').map(x=>x+'\\w*').join(' '),'i'),m=w.e.match(r);if(m)return[w.e.replace(m[0],'_____'),m[0]]}return null}
 function wFill(){const w=W[set.ids[qi]],b=blank(w);if(!b){quiz(w,`<p>（此句無法挖空，改為選擇題）選出意思</p><div class="big" style="font-size:22px">${esc(w.m)}</div>`,opts(w),o=>o.w);return}
@@ -164,9 +164,9 @@ function mark2(i){document.querySelectorAll('.line').forEach((e,j)=>e.classList.
 async function playAll(m){stopAll();const r=runId,s=curScene();for(let i=0;i<s.l.length;i++){if(r!==runId)return;const[w,t]=s.l[i];mark2(i);$('#ln'+i).scrollIntoView({block:'center',behavior:'smooth'});
  const gap=Math.max(1500,t.split(' ').length*600/ +cfg.rate);
  if(m===w){await wait(gap+800)}else{await speak(t,0,w);if(r!==runId)return;await wait(m==='shadow'?gap:500)}}mark2(-1);const t=today();log[t]=(log[t]||0)+1;save()}
-function pop(id){const w=W[id],P=$('#pop');P.style.display='block';say(head(w));
+function pop(id){const w=W[id],P=$('#pop');P.style.display='block';say(wHead(w));
  P.innerHTML=`<div class="big" style="font-size:22px">${esc(w.w)}</div><div class="mean">${esc(w.m)}</div><div class="ex">${esc(w.e)}</div><div class="scn">📍 ${esc(w.s)}</div>
- <div class="row"><button class="btn s" onclick="say(head(W[${id}]))">🔊 單字</button><button class="btn s l" onclick="say(W[${id}].e)">🔊 例句</button><button class="btn s g" onclick="addReview(${id});this.textContent='已加入今日複習 ✓'">＋ 加入複習</button><button class="btn s l" onclick="$('#pop').style.display='none'">關閉</button></div>`}
+ <div class="row"><button class="btn s" onclick="say(wHead(W[${id}]))">🔊 單字</button><button class="btn s l" onclick="say(W[${id}].e)">🔊 例句</button><button class="btn s g" onclick="addReview(${id});this.textContent='已加入今日複習 ✓'">＋ 加入複習</button><button class="btn s l" onclick="$('#pop').style.display='none'">關閉</button></div>`}
 // ---- library & stats ----
 let q='';
 function rLib(){const p=pool().filter(w=>!q||(w.w+w.m+w.e).toLowerCase().includes(q.toLowerCase()));
@@ -194,7 +194,7 @@ function buildCtx(){const n=+cfg.daily,wr=LS.get('ctxw',[]),nc=Math.ceil(n*0.6);
  let c=shuf(wr).slice(0,Math.ceil(nc/2));c=c.concat(shuf(CQ.map((_,i)=>i).filter(i=>!c.includes(i)))).slice(0,nc).map(i=>({t:'c',i}));
  const au=shuf(set.ids.filter(id=>blank(W[id]))).slice(0,n-c.length).map(id=>({t:'a',id}));ctxQ=shuf(c.concat(au))}
 function autoQ(w){const b=blank(w),pool=shuf(W.filter(x=>x.id!==w.id&&x.c===w.c&&!/\//.test(x.w))).slice(0,3);
- return{s:b[0],a:b[1],o:pool.map(x=>head(x)),f:w.e,e:`正確答案是「${b[1]}」（${w.m}）。適用情境：${w.s}。其他選項：`+pool.map(x=>`${head(x)}＝${x.m}`).join('；')+'，放進這句意思都不對。',id:w.id,sc:w.s}}
+ return{s:b[0],a:b[1],o:pool.map(x=>wHead(x)),f:w.e,e:`正確答案是「${b[1]}」（${w.m}）。適用情境：${w.s}。其他選項：`+pool.map(x=>`${wHead(x)}＝${x.m}`).join('；')+'，放進這句意思都不對。',id:w.id,sc:w.s}}
 function wCtx(){if(ci>=ctxQ.length){WA().innerHTML=`<div class="card"><h3>🎉 情境選詞完成！</h3><div class="row"><button class="btn" onclick="ci=0;buildCtx();wCtx()">再來一組</button><button class="btn l" onclick="go('scene')">去場景應用</button></div></div>`;return}
  const it=ctxQ[ci],q=it.t==='c'?Object.assign({},CQ[it.i],{id:cqWord(CQ[it.i])}):autoQ(W[it.id]);
  const os=shuf([q.a,...q.o]);
