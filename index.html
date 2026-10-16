@@ -11,10 +11,10 @@ header{background:rgba(15,28,45,.92);backdrop-filter:blur(10px);color:#fff;paddi
 header .top{display:flex;align-items:center;justify-content:space-between;gap:8px}
 header h1{font-size:17px;margin:0;font-weight:700}
 .iconbtn{border:0;background:var(--card2);color:var(--txt);border-radius:10px;padding:8px 12px;font-size:15px}
-nav{display:flex;background:rgba(15,28,45,.95);border-bottom:1px solid var(--line);position:sticky;top:52px;z-index:4}
-nav button{flex:1;border:0;background:none;padding:11px 2px;font-size:13px;color:var(--mut)}
-nav button.on{color:var(--acc);font-weight:700;border-bottom:3px solid var(--acc)}
-main{padding:12px;max-width:640px;margin:auto;padding-bottom:40px}
+nav{display:flex;background:rgba(15,28,45,.97);border-top:1px solid var(--line);position:fixed;left:0;right:0;bottom:0;z-index:6;padding-bottom:env(safe-area-inset-bottom)}
+nav button{flex:1;border:0;background:none;padding:8px 2px;font-size:12px;color:var(--mut);line-height:1.3;min-height:56px}
+nav button.on{color:var(--acc);font-weight:700}
+main{padding:12px;max-width:640px;margin:auto;padding-bottom:96px}
 .card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px;margin-bottom:12px;box-shadow:0 8px 24px #0004}
 .big{font-size:28px;font-weight:700;color:#fff;margin:4px 0;letter-spacing:.3px}
 .mean{font-size:19px;margin:6px 0;color:#d7e6f7}.ex{font-size:16px;color:#c5d4e6;line-height:1.55}
@@ -48,26 +48,35 @@ input[type=text],select{font:inherit;padding:10px;border:2px solid var(--line);b
 #drawer .mask{position:absolute;inset:0;background:#000a}
 #drawer .panel{position:absolute;right:0;top:0;bottom:0;width:min(340px,92vw);background:var(--card);border-left:1px solid var(--line);padding:18px;overflow:auto}
 #drawer label{display:block;margin:12px 0 4px;color:var(--mut);font-size:13px}
-#turn{position:sticky;top:100px;z-index:3;display:none;background:linear-gradient(135deg,#8a6d12,#5c4a0a);color:#fff;text-align:center;padding:12px;border-radius:12px;margin-bottom:10px;font-weight:700;font-size:18px;box-shadow:0 6px 20px #0005}
+#turn{position:sticky;top:60px;z-index:3;display:none;background:linear-gradient(135deg,#8a6d12,#5c4a0a);color:#fff;text-align:center;padding:12px;border-radius:12px;margin-bottom:10px;font-weight:700;font-size:18px;box-shadow:0 6px 20px #0005}
 #turn .cd{font-size:36px;display:block;margin-top:4px}
 .more{margin-top:8px}.more summary{cursor:pointer;color:var(--acc);font-weight:600;padding:8px 0}
 .progbox{margin:10px 0}.progbox .lbl{display:flex;justify-content:space-between;font-size:13px;color:var(--mut);margin-bottom:4px}
+.steps{display:flex;justify-content:space-between;font-size:12px;color:var(--mut);margin:4px 0 6px}.steps span.on{color:#fff;font-weight:700}.steps span.past{color:var(--ok)}
+.task{min-height:300px}.task .opt{min-height:54px;font-size:17px}
+.fbx{background:var(--card2);border-radius:12px;padding:12px;margin:10px 0;font-size:16px}.fbx.ok{background:#1a3d2c}.fbx.no{background:#3d1a1a}
+.rate{display:flex;gap:8px}.rate .btn{flex:1;min-height:52px;font-size:16px}
+.hintbox{color:var(--warn);font-size:20px;letter-spacing:2px;min-height:28px;margin:8px 0}
+.big-play{width:100%;min-height:64px;font-size:20px}
+.btn.huge{min-height:64px;font-size:20px}.hero{text-align:center;padding:28px 18px}.plan{color:#cfe0f5;font-size:16px;margin:0 0 14px}
+#task input[type=text],.task input[type=text]{font-size:18px;min-height:52px;margin:8px 0}
 </style></head><body>
 <div id="gate"><div class="box"><h2>🎧 商務英文練習</h2><p>iPhone 需先點一下才能播放聲音。<br>點下方按鈕開始，之後即可自動播放。</p><button class="btn pri" id="gateBtn" aria-label="點一下開始聽">點一下開始聽</button></div></div>
 <header><div class="top"><h1>📘 商務英文每日練習</h1><button class="iconbtn" id="setBtn" type="button" aria-label="開啟設定">⚙️ 設定</button></div></header>
-<nav id="nav"><button data-t="today">今日</button><button data-t="word">單詞</button><button data-t="scene">場景</button><button data-t="lib">詞庫</button><button data-t="stats">進度</button></nav>
+<nav id="nav"><button data-t="today">🏠<br>今日</button><button data-t="scene">🎭<br>場景</button><button data-t="lib">📚<br>詞庫</button><button data-t="stats">📈<br>進度</button></nav>
 <div id="turn"></div>
 <main id="main"></main>
 <div id="pop"></div>
 <div id="drawer"><div class="mask" id="drawerMask"></div><div class="panel">
 <h3 style="margin-top:0">設定</h3>
 <label>分類</label><select id="cat"></select>
-<label>每日題數</label><select id="daily"><option>10</option><option>20</option><option>30</option></select>
+<label>每日題數（更多模式）</label><select id="daily"><option>10</option><option>20</option><option>30</option></select>
 <label>口音</label><select id="accent"><option value="en-US">美式</option><option value="en-GB">英式</option></select>
 <p class="hint">英式僅單字有獨立語音；例句與對話仍為美式。</p>
 <label>語速</label><select id="rate"><option value="1">1x（預設）</option><option value="0.7">0.7x（慢）</option></select>
 <label>閃卡翻開前自動播音</label><select id="autoplay"><option value="0">關閉（建議）</option><option value="1">開啟</option></select>
-<label>練習範圍</label><select id="reviewOnly"><option value="0">全部單字</option><option value="1">只練待複習</option></select>
+<label>每日新詞上限</label><select id="newCap"><option value="5">5 個</option><option value="6">6 個（預設）</option><option value="8">8 個</option></select>
+<label>練習範圍（更多模式）</label><select id="reviewOnly"><option value="0">全部單字</option><option value="1">只練待複習</option></select>
 <label>收藏篩選</label><select id="favOnly"><option value="0">不限</option><option value="1">只練收藏 ★</option></select>
 
 <hr style="border-color:var(--line);margin:16px 0">
@@ -84,7 +93,7 @@ const AUD={"u":{"\"Best regards\" is a safe sign-off.":"audio/u5e448deb03.mp3","
 const W=DATA.words,SC=DATA.scenes,CATS=DATA.cats,DAY=864e5;
 const $=s=>document.querySelector(s),M=$('#main');
 const LS={get(k,d){try{return JSON.parse(localStorage.getItem('be_'+k))??d}catch(e){return d}},set(k,v){localStorage.setItem('be_'+k,JSON.stringify(v))}};
-let srs=LS.get('srs',{}),cfg=Object.assign({cat:'all',daily:10,accent:'en-US',rate:1,autoplay:0,reviewOnly:0,favOnly:0,cfgv:3},LS.get('cfg',{}));if((cfg.cfgv||0)<3){cfg.rate=1;cfg.cfgv=3};let log=LS.get('log',{}),set=LS.get('set',null),favs=new Set(LS.get('favs',[]));
+let srs=LS.get('srs',{}),cfg=Object.assign({cat:'all',daily:10,accent:'en-US',rate:1,autoplay:0,reviewOnly:0,favOnly:0,newCap:6,cfgv:3},LS.get('cfg',{}));if((cfg.cfgv||0)<3){cfg.rate=1;cfg.cfgv=3};let log=LS.get('log',{}),set=LS.get('set',null),favs=new Set(LS.get('favs',[]));
 const IV=[0,1,2,4,7,15,30,60];
 const today=()=>{const d=new Date();return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate()};
 const dayN=()=>Math.floor((Date.now()-new Date().getTimezoneOffset()*6e4)/DAY);
@@ -186,9 +195,6 @@ function setupGate(){
 window.addEventListener('pointerdown',()=>{if(!unlocked){/* wait for gate button */}},{once:true});
 
 // ---- SRS ----
-function grade(id,ok){const s=srs[id]||{box:0,due:0,r:0,x:0};if(ok){s.box=Math.min(s.box+1,IV.length-1);s.r++}else{s.box=1;s.x++}
- s.due=dayN()+(ok?IV[s.box]:0);srs[id]=s;const t=today();if(!log[t])log[t]={ops:0,words:[]};log[t].ops=(log[t].ops||0)+1;
- if(ok&&!log[t].words.includes(id))log[t].words.push(id);save()}
 function addReview(id){if(!srs[id])srs[id]={box:1,due:dayN(),r:0,x:0};else srs[id].due=dayN();save()}
 function buildSet(rand){const p=pool(),n=+cfg.daily,d=dayN();if(!p.length){set={day:today(),cat:cfg.cat,ids:[],done:[]};save();return}let due=shuf(p.filter(w=>srs[w.id]&&srs[w.id].due<=d)),nw=p.filter(w=>!srs[w.id]);
  if(rand)nw=shuf(nw);let ids=due.slice(0,Math.ceil(n/2)).concat(nw).slice(0,n);if(ids.length<n)ids=ids.concat(shuf(p.filter(w=>!ids.includes(w))).slice(0,n-ids.length));
@@ -230,28 +236,16 @@ function cardHTML(w,showAll=true){const sc=scenesFor(w.id);return `<div class="c
  ${sc.length?`<div class="mut" style="margin-top:8px">出現在場景：${sc.map(([s,i])=>`<a href="#" style="color:var(--acc)" onclick="openScene(${i});return false">${esc(s.t)}</a>`).join('、')}</div>`:''}`:''}</div>`}
 async function playDlg(id){stopAll();const r=runId;for(let i=0;i<2;i++){if(r!==runId)return;await speak(W[id].d[i],0,i?'B':'A');await wait(400)}}
 
-function rToday(){ensureSet();const p=pool();
- if(!p.length){M.innerHTML=`<div class="card"><h3>目前沒有可練習的單字</h3><p class="mut">可能是「只練待複習／只練收藏」太嚴，或此分類為空。請到 ⚙️ 設定調整。</p><button type="button" class="btn" onclick="$('#setBtn').click()">開啟設定</button></div>`;return}
- const done=set.done.length,n=set.ids.length,d=dayN(),due=p.filter(w=>srs[w.id]&&srs[w.id].due<=d).length;
- const next=CYCLE.includes(wmode)?wmode:'card';const st=streak();
- const cele=st>0&&st%7===0?`<div class="scn">🎉 太強了！連續練習 ${st} 天，繼續保持！</div>`:(st>=3?`<div class="hint">🔥 連續 ${st} 天 — 離下一週里程碑還有 ${7-(st%7||7)} 天</div>`:'');
- if(n&&done>=n){M.innerHTML=`<div class="card" style="text-align:center;padding:28px 16px"><div style="font-size:48px">🏅</div><h2 style="margin:8px 0">今日目標完成！</h2><p>已掌握今日 ${done}/${n} 個單詞</p><p class="mut">連續 ${st} 天　今日學會 ${todayWords()} 詞</p>${cele}
- <button type="button" class="btn pri" onclick="go('scene')">去場景跟讀鞏固</button>
- <div class="row"><button type="button" class="btn l" onclick="qi=0;wmode='card';go('word')">再練一輪</button><button type="button" class="btn l" onclick="confirmShuffle(()=>render())">重抽新一組</button></div>
- <button type="button" class="btn l" style="width:100%" onclick="wmode='ctx';go('word')">挑戰情境選詞</button></div>
- <div class="card"><b>今日單詞</b><div class="list">${set.ids.map(id=>`<div class="it" onclick="jumpWord(${id})">✅ <b>${esc(W[id].w)}</b> <span class="mut">${esc(W[id].m)}</span></div>`).join('')}</div></div>`;return}
- M.innerHTML=`<div class="card"><div class="stat"><div><b>${st}🔥</b>連續天數</div><div><b>${todayWords()}</b>今日學會</div><div><b>${due}</b>待複習</div></div>
- ${cele}
- <p style="margin:12px 0 4px">今日單詞 ${done}/${n}　<span class="mut">操作 ${todayOps()} 次</span></p><div class="pbar"><i style="width:${n?done/n*100:0}%"></i></div>
- <button type="button" class="btn pri" onclick="wmode='${next}';go('word')">▶ 開始今日練習</button>
- <p class="hint">建議流程：閃卡 → 聽音選義 → 看義選詞 → 填空 → 情境選詞。也可從下方選單一模式。</p>
- <details class="more"><summary>更多練習</summary>
- <div class="row" style="margin-top:8px"><button type="button" class="btn l" onclick="wmode='card';go('word')">閃卡</button><button type="button" class="btn l" onclick="wmode='listen';go('word')">聽音選義</button></div>
+function rToday(){const st=streak();const active=S&&S.day===today()&&!S.done;const doneToday=S&&S.day===today()&&S.done;
+ M.innerHTML=`<div class="card hero">${st?`<p class="mut">🔥 連續 ${st} 天</p>`:''}
+ <h2 style="margin:4px 0 6px">${doneToday?'今天完成了 🎉':'今日練習'}</h2>
+ <p class="plan">${doneToday?`複習答對 ${S.okR} 個・新學 ${S.okN.length} 個`:esc(todayPlanText())}</p>
+ <button type="button" class="btn pri huge" onclick="startToday()">${active?'▶ 繼續今日練習':doneToday?'再看一次總結':'▶ 開始今日練習'}</button></div>
+ <details class="more"><summary>更多</summary>
+ <div class="row"><button type="button" class="btn l" onclick="wmode='card';go('word')">翻卡</button><button type="button" class="btn l" onclick="wmode='listen';go('word')">聽音選義</button></div>
  <div class="row"><button type="button" class="btn l" onclick="wmode='m2w';go('word')">看義選詞</button><button type="button" class="btn l" onclick="wmode='fill';go('word')">例句填空</button></div>
- <div class="row"><button type="button" class="btn l" onclick="wmode='ctx';go('word')">情境選詞</button><button type="button" class="btn l" onclick="go('scene')">場景跟讀</button></div>
- <button type="button" class="btn l" style="width:100%" onclick="confirmShuffle(()=>render())">🔀 重抽今日單詞</button>
- </details></div>
- <div class="card"><b>今日單詞</b><div class="list">${set.ids.map(id=>`<div class="it" onclick="jumpWord(${id})">${set.done.includes(id)?'✅':'⬜'} <b>${esc(W[id].w)}</b> <span class="mut">${esc(W[id].m)}</span> ${isFav(id)?'★':''}</div>`).join('')}</div></div>`}
+ <div class="row"><button type="button" class="btn l" onclick="wmode='ctx';go('word')">情境選詞</button><button type="button" class="btn l" onclick="if(confirm('重新安排今天的練習？')){S=null;saveS();render()}">重新安排今天</button></div>
+ <button type="button" class="btn l" style="width:100%" onclick="$('#setBtn').click()">⚙️ 設定</button></details>`}
 function jumpWord(id){ensureSet();const i=set.ids.indexOf(id);qi=i>=0?i:0;wmode='card';go('word')}
 
 function rWord(){ensureSet();if(!set.ids.length){M.innerHTML=`<div class="card"><h3>沒有可練習的單字</h3><p class="mut">請在 ⚙️ 關閉「只練待複習／只練收藏」，或換分類。</p><button type="button" class="btn" onclick="$('#setBtn').click()">開啟設定</button></div>`;return}const subs=[['card','閃卡'],['listen','聽音選義'],['m2w','看義選詞'],['fill','例句填空'],['ctx','情境選詞']];
@@ -381,7 +375,7 @@ async function downloadAll(){if(typeof AUD==='undefined'){alert('此版本沒有
  const urls=new Set();['u','b','g'].forEach(k=>Object.values(AUD[k]||{}).forEach(u=>urls.add(u)));
  const list=[...urls],box=$('#dlProg'),lbl=$('#dlLbl'),pct=$('#dlPct'),bar=$('#dlBar');
  box.style.display='block';let ok=0,fail=0;
- const cache=await caches.open('be-v4');
+ const cache=await caches.open('be-v5');
  for(let i=0;i<list.length;i++){const u=list[i];lbl.textContent=`下載語音 ${i+1}/${list.length}`;pct.textContent=Math.round(i/list.length*100)+'%';bar.style.width=(i/list.length*100)+'%';
   try{const abs=new URL(u,location.href).href;const hit=await cache.match(abs);if(!hit){const res=await fetch(abs);if(res.ok)await cache.put(abs,res.clone());else fail++}ok++}catch(e){fail++}
   if(i%20===0)await wait(0)}
@@ -400,13 +394,118 @@ document.addEventListener('keydown',e=>{
  if(e.key==='Enter'){const n=[...document.querySelectorAll('button')].find(b=>/下一題|翻開/.test(b.textContent));if(n)n.click()}
 });
 
+
+// ===== Learning engine v2 (successive relearning) =====
+const IV2=[1,3,7,21,45];
+(function migrate(){if(LS.get('srsv',1)>=2)return;Object.values(srs).forEach(s=>{const b=s.box||0;s.st=b>=6?3:b>=5?2:b>=3?1:0;s.box=s.st+2;s.p=1});LS.set('srsv',2);LS.set('srs',srs)})();
+function grade(id,ok){const s=srs[id]||{box:0,due:0,r:0,x:0,st:0,p:0};const t=today();if(!log[t])log[t]={ops:0,words:[]};log[t].ops=(log[t].ops||0)+1;
+ if(ok){if(!s.p){s.p=1;s.st=0}else if(s.due<=dayN()){s.st=Math.min((s.st||0)+1,IV2.length-1)}s.r=(s.r||0)+1;s.box=s.st+2;s.due=dayN()+IV2[s.st];if(!log[t].words.includes(id))log[t].words.push(id)}
+ else{s.x=(s.x||0)+1;if(s.p){s.st=0;s.box=1}s.due=dayN()}
+ srs[id]=s;save()}
+function norm(x){return String(x).toLowerCase().replace(/[’‘`]/g,"'").replace(/\(.*?\)/g,' ').replace(/[^a-z0-9' ]/g,' ').replace(/\s+/g,' ').trim()}
+function lev(a,b){const m=a.length,n=b.length;if(!m)return n;if(!n)return m;let p=[...Array(n+1).keys()];for(let i=1;i<=m;i++){const c=[i];for(let j=1;j<=n;j++)c[j]=Math.min(p[j]+1,c[j-1]+1,p[j-1]+(a[i-1]===b[j-1]?0:1));p=c}return p[n]}
+function answers(w){return [...new Set([wHead(w),...w.k].map(norm).filter(Boolean))]}
+function checkTyped(w,v){v=norm(v);if(!v)return false;return answers(w).some(a=>{const tol=a.length<=4?0:a.length<=8?1:2;return a===v||lev(a,v)<=tol})}
+function sentences(w){const out=[w.e,...w.d];SC.forEach(s=>s.l.forEach(l=>{if(wordsIn(l[1]).includes(w.id))out.push(l[1])}));return [...new Set(out)]}
+function blankIn(w,t){for(const k of w.k){const r=new RegExp('\\b'+k.replace(/[.*+?^${}()|[\]\\]/g,'\\$&').split(' ').map(x=>x+'\\w*').join(' '),'i'),m=t.match(r);if(m)return[t.replace(m[0],'_____'),m[0],t]}return null}
+function randBlank(w,avoid){const c=shuf(sentences(w)).map(t=>blankIn(w,t)).filter(Boolean);return c.find(b=>b[2]!==avoid)||c[0]||null}
+function distract(w,n){const near=shuf(W.filter(x=>x.id!==w.id&&x.c===w.c&&!/\//.test(x.w)));return near.slice(0,n||3)}
+// ---- session ----
+let S=LS.get('tsess',null);
+function saveS(){LS.set('tsess',S)}
+function planToday(){const d=dayN(),p=W.filter(w=>cfg.cat==='all'||w.c===cfg.cat);
+ let due=p.filter(w=>srs[w.id]&&srs[w.id].p&&srs[w.id].due<=d);
+ // interleave: group by category so confusables sit next to each other
+ const g={};shuf(due).forEach(w=>(g[w.c]=g[w.c]||[]).push(w));due=Object.values(g).flat().slice(0,40);
+ const nw=shuf(p.filter(w=>!srs[w.id]||!srs[w.id].p)).slice(0,+cfg.newCap||6);
+ return{rev:due.map(w=>w.id),nw:nw.map(w=>w.id)}}
+function todayPlanText(){if(S&&S.day===today()&&!S.done)return`繼續今天的練習：剩 ${S.q.length} 題`;const pl=planToday();const min=Math.max(3,Math.round(pl.rev.length*0.6+pl.nw.length*2));return`今天：複習 ${pl.rev.length} 個＋新詞 ${pl.nw.length} 個，約 ${min} 分鐘`}
+const QT=['recall','listen','fill','ctx'];
+function nextType(id){const s=srs[id]||{};const opts=QT.filter(t=>t!==s.lq);const t=opts[Math.random()*opts.length|0];if(srs[id]){srs[id].lq=t}return t}
+function startToday(){if(!(S&&S.day===today()&&!S.done)){const pl=planToday();
+  S={day:today(),rev:pl.rev,nw:pl.nw,q:[],okR:0,okN:[],tries:{},step:1,done:false};
+  pl.rev.forEach(id=>S.q.push({id,k:'rev',t:nextType(id)}));
+  pl.nw.forEach(id=>S.q.push({id,k:'pre'}));
+  pl.nw.forEach(id=>S.q.push({id,k:'learn',t:'recall'}));
+  pl.nw.forEach(id=>S.q.push({id,k:'conf'}));
+  S.total=S.q.length;saveS()}
+ tab='today';sessView()}
+const STEPS=['複習','猜新詞','學新詞','確認','完成'];
+function stepOf(k){return{rev:1,pre:2,learn:3,conf:4}[k]||5}
+function stepBar(){const cur=S.q.length?stepOf(S.q[0].k):5,pct=S.total?Math.round((S.total-S.q.length)/S.total*100):100;
+ return`<div class="steps">${STEPS.map((s,i)=>`<span class="${i+1===cur?'on':i+1<cur?'past':''}">${'①②③④⑤'[i]}${s}</span>`).join('')}</div><div class="pbar" style="margin-bottom:12px"><i style="width:${pct}%"></i></div>`}
+function sessView(){document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('on',b.dataset.t==='today'));stopAll();
+ if(!S.q.length)return sessDone();const it=S.q[0],w=W[it.id];
+ if(it.k==='pre')return qPre(w);
+ if(it.k==='conf')return qChoiceMean(w,'conf');
+ let t=it.t||'recall';
+ if(t==='fill'&&!randBlank(w))t='recall';if(t==='ctx'&&!randBlank(w))t='listen';
+ ({recall:qRecall,listen:qListen,fill:qFill,ctx:qCtx})[t](w)}
+function shell(inner){M.innerHTML=stepBar()+`<div class="card task">${inner}</div><button type="button" class="btn l s" style="margin-top:4px" onclick="exitSess()">暫停，回今日</button>`;M.querySelectorAll('.hl').forEach(e=>e.onclick=()=>pop(+e.dataset.w));scrollTo(0,0)}
+function exitSess(){saveS();stopAll();go('today')}
+function answerAndNext(ok){const it=S.q.shift();const id=it.id;
+ if(it.k==='pre'){}
+ else{grade(id,ok);
+  if(!ok){S.tries[id]=(S.tries[id]||0)+1;const back={id,k:it.k==='conf'?'learn':it.k,t:it.k==='rev'?nextType(id):'recall'};S.q.splice(Math.min(3,S.q.length),0,back);S.total++}
+  else{if(it.k==='rev')S.okR++;if(it.k==='learn'&&!S.okN.includes(id))S.okN.push(id)}}
+ saveS();sessView()}
+function fbBox(ok,w,extra){return`<div class="fbx ${ok?'ok':'no'}">${ok?'✅ 答對了':'❌ 再記一下'}　<b>${esc(wHead(w))}</b>　${esc(w.m)}</div>${extra||''}`}
+function primary(label,fn){return`<button type="button" class="btn pri" id="primBtn" onclick="${fn}">${label}</button>`}
+// ① recall (active)
+let hintLv=0;
+function hintText(w){const h=wHead(w);if(hintLv===1)return h.split(' ').map(x=>x[0]+'…').join(' ');if(hintLv===2)return h.split('').map((c,i)=>c===' '?'　':(i===0||h[i-1]===' '?c:'＿')).join(' ')+`（${h.replace(/ /g,'').length} 個字母）`;if(hintLv>=3)return h;return''}
+function qRecall(w){hintLv=0;const tip=tipHTML(w);
+ shell(`<p class="mut">想一想英文怎麼說？說出來或打字</p><div class="big" style="font-size:24px">${esc(w.m)}</div><div class="scn">📍 ${esc(w.s)}</div>
+ <div id="hint" class="hintbox"></div>
+ <input type="text" id="ri" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="輸入英文（可留空，用說的）">
+ <div id="ract">${primary('確認','recallCheck()')}<div class="row"><button type="button" class="btn l" onclick="moreHint()">💡 提示</button><button type="button" class="btn l" onclick="recallReveal()">我說完了，看答案</button></div></div>`);
+ const i=$('#ri');i.onkeydown=e=>{if(e.key==='Enter')recallCheck()};S._w=w.id}
+function moreHint(){const w=W[S._w];hintLv=Math.min(hintLv+1,3);$('#hint').innerHTML=`💡 ${esc(hintText(w))}`;if(hintLv>=3)recallReveal()}
+function recallCheck(){const w=W[S._w],v=$('#ri').value;if(!norm(v))return recallReveal();const ok=checkTyped(w,v)&&hintLv<3;showAns(w,ok,true)}
+function recallReveal(){const w=W[S._w];showAns(w,null,false)}
+function showAns(w,ok,typed){say(wHead(w));const ex=`<div class="ex" style="margin-top:8px">${hl(w.e)}</div>${tipHTML(w)}<button type="button" class="btn s l" onclick="sayBtn(this,wHead(W[${w.id}]))">🔊 再聽一次</button>`;
+ if(typed){$('#ract').innerHTML=fbBox(ok,w,ex)+primary('下一題',`answerAndNext(${ok})`);return}
+ $('#ract').innerHTML=`<div class="fbx"><b style="font-size:22px">${esc(wHead(w))}</b>　${esc(w.m)}</div>${ex}<p class="mut" style="margin-top:10px">你剛剛答得如何？</p>
+ <div class="rate">${hintLv>=2?'':`<button type="button" class="btn g" onclick="answerAndNext(true)">秒答</button>`}<button type="button" class="btn" onclick="answerAndNext(true)">想了一下</button><button type="button" class="btn r" onclick="answerAndNext(false)">忘了</button></div>`}
+// listen → meaning
+function choiceList(os,correct,cb){return os.map((o,i)=>`<button type="button" class="opt" data-ok="${o.ok?1:0}" data-k="${i+1}">${esc(o.t)}</button>`).join('')}
+function bindChoices(w,after){M.querySelectorAll('.opt').forEach(b=>b.onclick=()=>{const ok=b.dataset.ok==='1';M.querySelectorAll('.opt').forEach(x=>{x.disabled=true;if(x.dataset.ok==='1')x.classList.add('ok')});if(!ok)b.classList.add('no');after(ok)})}
+function qListen(w){const os=shuf([{t:w.m,ok:1},...distract(w).map(x=>({t:x.m}))]);
+ shell(`<p class="mut">聽發音，選出意思</p><button type="button" class="btn big-play" onclick="sayBtn(this,wHead(W[${w.id}]))">🔊 播放</button>${choiceList(os)}<div id="fa"></div>`);
+ setTimeout(()=>say(wHead(w)),200);bindChoices(w,ok=>{$('#fa').innerHTML=fbBox(ok,w)+primary('下一題',`answerAndNext(${ok})`)})}
+// fill (typed) with varied sentence
+function qFill(w){const b=randBlank(w,S._last);S._last=b[2];S._w=w.id;S._b=b;
+ shell(`<p class="mut">填入空格（${esc(w.m)}）</p><div class="ex" style="font-size:19px">${esc(b[0])}</div><input type="text" id="fi" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="輸入英文"><div id="fa">${primary('確認','fillCheck()')}<button type="button" class="btn l s" onclick="$('#fi').value='';fillCheck(true)">不知道，看答案</button></div>`);
+ const i=$('#fi');i.onkeydown=e=>{if(e.key==='Enter')fillCheck()};setTimeout(()=>i.focus(),100)}
+function fillCheck(giveup){const w=W[S._w],b=S._b,v=norm($('#fi').value),a=norm(b[1]);const ok=!giveup&&(v===a||(a.length>4&&lev(v,a)<=(a.length<=8?1:2))||checkTyped(w,v));
+ say(b[2]);$('#fa').innerHTML=fbBox(ok,w,`<div class="ex">${hl(b[2])}</div>`)+primary('下一題',`answerAndNext(${ok})`)}
+// 情境選詞 (choice of confusable words in a fresh sentence)
+function qCtx(w){const b=randBlank(w,S._last);S._last=b[2];const os=shuf([{t:b[1],ok:1},...distract(w).map(x=>({t:wHead(x)}))]);
+ shell(`<p class="mut">選出最適合的詞</p><div class="scn">📍 ${esc(w.s)}</div><div class="ex" style="font-size:19px">${esc(b[0])}</div>${choiceList(os)}<div id="fa"></div>`);
+ bindChoices(w,ok=>{say(b[2]);$('#fa').innerHTML=fbBox(ok,w,`<div class="ex">${hl(b[2])}</div>`)+primary('下一題',`answerAndNext(${ok})`)})}
+// ② pretest: guess before reveal (not graded)
+function qPre(w){const b=randBlank(w)||[w.e.replace(/.*/,'_____'),wHead(w),w.e];const os=shuf([{t:wHead(w),ok:1},...distract(w).map(x=>({t:wHead(x)}))]);
+ shell(`<p class="mut">新詞！先猜猜看（猜錯沒關係）</p><div class="scn">📍 ${esc(w.s)}</div><div class="ex" style="font-size:19px">${esc(b[0])}</div>${choiceList(os)}<div id="fa"></div>`);
+ bindChoices(w,ok=>{say(wHead(w));$('#fa').innerHTML=`<div class="fbx ${ok?'ok':''}">${ok?'🎯 猜對了！':'答案是'}　<b>${esc(wHead(w))}</b>　${esc(w.m)}</div><div class="ex">${hl(b[2])}</div>${tipHTML(w)}
+  <div class="row"><button type="button" class="btn s l" onclick="sayBtn(this,wHead(W[${w.id}]))">🔊 單字</button><button type="button" class="btn s l" onclick="sayBtn(this,${JSON.stringify(b[2]).replace(/"/g,'&quot;')})">🔊 句子</button></div>`+primary('記住了，下一個','answerAndNext(true)')})}
+// ④ confirm: quick meaning check of new words
+function qChoiceMean(w){const os=shuf([{t:wHead(w),ok:1},...distract(w).map(x=>({t:wHead(x)}))]);
+ shell(`<p class="mut">確認一下：哪個是「${esc(w.m)}」？</p>${choiceList(os)}<div id="fa"></div>`);
+ bindChoices(w,ok=>{say(wHead(w));$('#fa').innerHTML=fbBox(ok,w)+primary(ok?'下一題':'再練一次','answerAndNext('+ok+')')})}
+function sessDone(){if(!S.done){S.done=true;saveS()}const st=streak();
+ M.innerHTML=stepBar()+`<div class="card" style="text-align:center;padding:26px 16px"><div style="font-size:52px">🏅</div><h2 style="margin:6px 0">今日練習完成！</h2>
+ <p>複習答對 ${S.okR} 個　新學 ${S.okN.length} 個</p><p class="mut">連續 ${st} 天 🔥${st&&st%7===0?'　太強了！又滿一週！':''}</p>
+ ${S.okN.length?`<div class="list" style="text-align:left">${S.okN.map(id=>`<div class="it"><b>${esc(W[id].w)}</b> <span class="mut">${esc(W[id].m)}</span></div>`).join('')}</div>`:''}
+ <button type="button" class="btn pri" onclick="go('scene')">去場景跟讀鞏固</button><p class="mut">明天會依記憶曲線安排複習（1・3・7・21 天）</p></div>`}
+
 // ---- init ----
 $('#cat').innerHTML='<option value="all">全部</option>'+CATS.map(c=>`<option>${c}</option>`).join('');
-['cat','daily','accent','rate','autoplay','reviewOnly','favOnly'].forEach(k=>{const e=$('#'+k);if(!e)return;e.value=String(cfg[k]??0);
+['cat','daily','accent','rate','autoplay','reviewOnly','favOnly','newCap'].forEach(k=>{const e=$('#'+k);if(!e)return;e.value=String(cfg[k]??0);
  e.onchange=()=>{cfg[k]=e.value;save();if(k==='cat'||k==='daily'||k==='reviewOnly'||k==='favOnly'){qi=0;myLines=null;buildSet(false)}render()}});
 $('#nav').querySelectorAll('button').forEach(b=>{b.type='button';b.setAttribute('aria-label',b.textContent.trim())});
 $('#nav').onclick=e=>{if(e.target.dataset.t){smode=null;go(e.target.dataset.t)}};
 document.addEventListener('click',e=>{const P=$('#pop');if(P.style.display==='block'&&!P.contains(e.target)&&!e.target.classList.contains('hl'))P.style.display='none'});
 setupGate();
 if(resumeSession()){document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('on',b.dataset.t===tab));render()}else go('today');
+
 </script><script>if("serviceWorker" in navigator&&location.protocol==="https:")navigator.serviceWorker.register("./sw.js");</script></body></html>
